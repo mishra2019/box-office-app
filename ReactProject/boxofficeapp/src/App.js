@@ -1,7 +1,6 @@
-import { Routes, Route } from 'react-router-dom';
-import Navs from './components/Navs';
-import Home from './pages/Home';
-import Starred from './pages/Starred';
+import { Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import Starred from "./pages/Starred";
 
 function App() {
   return (
