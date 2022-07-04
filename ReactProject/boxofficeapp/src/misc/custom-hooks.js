@@ -1,16 +1,17 @@
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
+import apiGet from "./config";
 
-const showsReducer = (prevstate, action) => {
+const showsReducer = (prevState, action) => {
   switch (action.type) {
     case "ADD": {
-      return [...prevstate, action.showId];
+      return [...prevState, action.showId];
     }
     case "REMOVE": {
-      return prevstate.filter((showId) => showId !== action.showId);
+      return prevState.filter((showId) => showId !== action.showId);
     }
 
     default:
-      return prevstate;
+      return prevState;
   }
 };
 
@@ -28,4 +29,61 @@ const usePersistedReducer = (reducer, initialstate, key) => {
 
 export const useShows = (key = "show") => {
   return usePersistedReducer(showsReducer, [], key);
+};
+
+export const usedLastQuery = (key = "lastQuery") => {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const [input, setInput] = useState(() => {
+    const persisted = sessionStorage.getItem(key);
+    return persisted ? JSON.parse(persisted) : "";
+  });
+
+  const setPersistedInput = (newState) => {
+    setInput(newState);
+    sessionStorage.setItem(key, JSON.stringify(newState));
+  };
+
+  return [input, setPersistedInput];
+};
+
+const reducer = (prevState, action) => {
+  switch (action.type) {
+    case "FETCH_SUCCESS": {
+      return { isLoading: false, show: action.show, error: null };
+    }
+    case "FETCH_FAILED": {
+      return { ...prevState, isLoading: false, error: action.error };
+    }
+    default:
+      return prevState;
+  }
+};
+
+export const useShow = (showId) => {
+  const [state, dispatch] = useReducer(reducer, {
+    show: null,
+    isLoading: true,
+    error: null,
+  });
+
+  //let isMounted = true;
+
+  useEffect(() => {
+    apiGet(`/shows/${showId}?embed[]=seasons&embed[]=cast`)
+      .then((results) => {
+        // if (isMounted) {
+        dispatch({ type: "FETCH_SUCCESS", show: results });
+        // }
+      })
+      .catch((err) => {
+        // if (isMounted) {
+        dispatch({ teype: "FETCH_FAILED", error: err.message });
+        // }
+      });
+    // return () => {
+    //   isMounted = false;
+    // };
+  }, [showId]);
+
+  return state;
 };
